@@ -22,9 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # Skip heavy cache on Windows - decompression takes 2+ minutes
       - uses: actions/cache@v5
-        if: runner.os != 'Windows'
         with:
           path: |
             ~/.cache/pip
@@ -33,13 +31,6 @@ jobs:
           key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
           restore-keys: |
             ${{ runner.os }}-pio-
-
-      # Lighter cache for Windows - only pip
-      - uses: actions/cache@v5
-        if: runner.os == 'Windows'
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('platformio.ini') }}
 
       # Disable ccache on Windows (causes overhead on NTFS)
       - name: Setup ccache
@@ -65,6 +56,13 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           echo "PLATFORMIO_BUILD_CACHE_DIR=$HOME/.buildcache" >> $GITHUB_ENV
+
+      # Disable Windows Defender real-time scanning (per platformio/platformio-core#5018)
+      - name: Disable Windows Defender monitoring
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true
 
       - name: Display PlatformIO Information
         run: |
