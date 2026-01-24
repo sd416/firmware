@@ -22,7 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Skip heavy cache on Windows - decompression takes 2+ minutes
       - uses: actions/cache@v5
+        if: runner.os != 'Windows'
         with:
           path: |
             ~/.cache/pip
@@ -32,7 +34,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pio-
 
+      # Lighter cache for Windows - only pip
+      - uses: actions/cache@v5
+        if: runner.os == 'Windows'
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('platformio.ini') }}
+
+      # Disable ccache on Windows (causes overhead on NTFS)
       - name: Setup ccache
+        if: runner.os != 'Windows'
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ${{ runner.os }}-ccache-${{ hashFiles('platformio.ini') }}
@@ -54,11 +65,6 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           echo "PLATFORMIO_BUILD_CACHE_DIR=$HOME/.buildcache" >> $GITHUB_ENV
-          
-      - name: Configure ccache for PlatformIO (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "PLATFORMIO_BUILD_CACHE_DIR=$env:USERPROFILE\.buildcache" >> $env:GITHUB_ENV
 
       - name: Display PlatformIO Information
         run: |
