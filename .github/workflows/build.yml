@@ -22,7 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Use standard cache for Linux/macOS (fast)
       - uses: actions/cache@v5
+        if: runner.os != 'Windows'
         with:
           path: |
             ~/.cache/pip
@@ -31,6 +33,24 @@ jobs:
           key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
           restore-keys: |
             ${{ runner.os }}-pio-
+
+      # Windows: Use 7z cache from releases (much faster than tar+zstd)
+      # To create cache: run build, then: 7z a -t7z -mx9 platformio-cache.7z %USERPROFILE%\.platformio
+      # Upload to: Releases > toolchain-cache > platformio-cache.7z
+      - name: Restore cache (Windows - 7zip)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $cacheUrl = "https://github.com/${{ github.repository }}/releases/download/toolchain-cache/platformio-cache.7z"
+          try {
+            Invoke-WebRequest $cacheUrl -OutFile cache.7z -TimeoutSec 60
+            7z x cache.7z -o"$env:USERPROFILE" -mmt=4 -y
+            Remove-Item cache.7z
+            Write-Host "Cache restored successfully"
+          } catch {
+            Write-Host "No cache found, will build from scratch (first run or cache not uploaded)"
+          }
 
       # Disable ccache on Windows (causes overhead on NTFS)
       - name: Setup ccache
