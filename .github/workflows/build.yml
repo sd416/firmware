@@ -60,6 +60,15 @@ jobs:
         run: |
           echo "PLATFORMIO_BUILD_CACHE_DIR=$env:USERPROFILE\.buildcache" >> $env:GITHUB_ENV
 
+      - name: Disable Windows Defender real-time monitoring (speeds up I/O)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true
+          Set-MpPreference -DisableIntrusionPreventionSystem $true
+          Set-MpPreference -DisableIOAVProtection $true
+          Set-MpPreference -DisableScriptScanning $true
+
       - name: Display PlatformIO Information
         run: |
           pio system info
@@ -67,7 +76,7 @@ jobs:
           gcc --version
 
       - name: build (trmnl)
-        run: pio run -j ${{ runner.os == 'Windows' && '1' || '4' }} -v
+        run: pio run -j ${{ runner.os == 'Windows' && '2' || '4' }} -v
 
       #- name: build (TRMNL_X)
       #  run: pio run -e TRMNL_X -j ${{ runner.os == 'Windows' && '1' || '4' }} -v
