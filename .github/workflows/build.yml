@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/pip
@@ -38,7 +38,7 @@ jobs:
           key: ${{ runner.os }}-ccache-${{ hashFiles('platformio.ini') }}
           job-summary: "" # disabled
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
